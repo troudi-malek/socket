@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Socket.io Chat</title>
+  <script src="/socket.io/socket.io.js"></script>
+</head>
+<body>
+  <!-- Add a dialog window to get user's name -->
+  <div id="nameDialog" style="display: none;">
+    <label for="username">Enter your name:</label>
+    <input type="text" id="username" />
+    <button onclick="setUsername()">Join Chat</button>
+  </div>
+
+  <ul id="messages" style="display: none;"></ul>
+  <form action="" id="form" onsubmit="return sendMessage()" style="display: none;">
+    <input id="m" autocomplete="off" /><button>Send</button>
+  </form>
+<div id="typing" style="display: none;"></div>
+  <!-- Inside the script tag in your HTML file -->
+<script>
+  const socket = io.connect();
+  let username;
+
+  function setUsername() {
+    username = document.getElementById('username').value;
+    if (username.trim() !== '') {
+      document.getElementById('nameDialog').style.display = 'none';
+      document.getElementById('messages').style.display = 'block';
+      document.getElementById('form').style.display = 'block';
+      socket.emit('set username', username); // Send username to the server
+    }
+    return false;
+  }
+
+  socket.on('chat message', function(data){
+    const ul = document.getElementById('messages');
+    const li = document.createElement('li');
+    li.appendChild(document.createTextNode(`${data.username}: ${data.message}`));
+    ul.appendChild(li);
+  });
+
+  function sendTyping() {
+    socket.emit('typing', { username });
+  }
+function sendTyping() {
+    socket.emit('typing', { username });
+
+    clearTimeout(typingTimeout);
+    typingTimeout = setTimeout(() => {
+      endTyping();
+    }, 1500);
+  }
+
+  socket.on('user typing', function(data) {
+    const typingIndicator = document.getElementById('typing');
+    if (data.username !== '') {
+      typingIndicator.innerText = `${data.username} is typing...`;
+      typingIndicator.style.display = 'block';
+    } else {
+      typingIndicator.style.display = 'none';
+    }
+  });
+
+  function endTyping() {
+    const typingIndicator = document.getElementById('typing');
+    typingIndicator.style.display = 'none';
+  }
+
+  function sendMessage() {
+    const input = document.getElementById('m');
+    socket.emit('end typing', { username }); 
+    socket.emit('chat message', input.value); 
+    input.value = '';
+    return false;
+  }
+
+  // Show the name dialog when the page loads
+  window.onload = function() {
+    document.getElementById('nameDialog').style.display = 'block';
+  };
+
+  // Event listener for the onkeyup event
+  document.getElementById('m').onkeyup = function() {
+    sendTyping();
+  };
+
+</script>
+
+</body>
+</html>
